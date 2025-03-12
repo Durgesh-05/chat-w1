@@ -5,11 +5,12 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { requireAuth, verifyToken } from '@clerk/express';
-import { prisma } from './prisma';
+import prisma from './prisma';
+import { Webhook } from 'svix';
 
 const app = express();
 const httpServer = createServer(app);
-const port = process.env.PORT || 8000;
+const port = 8000;
 const io = new Server(httpServer, {
   cors: {
     origin: '*',
@@ -20,7 +21,8 @@ const io = new Server(httpServer, {
 app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(requireAuth());
+// app.use(requireAuth());
+// Webhook is public url so I cannot use require auth in all routes
 
 io.use(async (socket: Socket, next) => {
   try {
@@ -52,12 +54,81 @@ io.on('connection', (socket: Socket) => {
 });
 
 process.on('SIGINT', async () => {
+  console.log('Disconnecting prisma db');
   await prisma.$disconnect();
   process.exit(0);
 });
 
 app.get('/', (req, res) => {
   res.status(200).json('Hello World!');
+});
+
+app.post('/api/webhooks', async (req, res) => {
+  const SIGNING_SECRET = process.env.SIGNING_SECRET;
+
+  if (!SIGNING_SECRET) {
+    throw new Error(
+      'Error: Please add SIGNING_SECRET from Clerk Dashboard to .env'
+    );
+  }
+
+  const wh = new Webhook(SIGNING_SECRET);
+  const headers = req.headers;
+  const payload = req.body;
+  const svix_id = headers['svix-id'];
+  const svix_timestamp = headers['svix-timestamp'];
+  const svix_signature = headers['svix-signature'];
+
+  if (!svix_id || !svix_timestamp || !svix_signature) {
+    res.status(400).json({
+      success: false,
+      message: 'Error: Missing svix headers',
+    });
+    return;
+  }
+
+  let evt: any;
+  try {
+    evt = wh.verify(JSON.stringify(payload), {
+      'svix-id': svix_id as string,
+      'svix-timestamp': svix_timestamp as string,
+      'svix-signature': svix_signature as string,
+    });
+  } catch (err: any) {
+    console.log('Error: Could not verify webhook:', err.message);
+    return void res.status(400).json({
+      success: false,
+      message: err.message,
+    });
+  }
+
+  if (evt.type === 'user.created') {
+    const { email_addresses, first_name, last_name, profile_image_url } =
+      evt.data;
+    console.log(
+      'Webhook Recieved data: ',
+      email_addresses[0].email_address,
+      first_name,
+      last_name,
+      profile_image_url
+    );
+
+    const user = await prisma.user.create({
+      data: {
+        email: email_addresses[0].email_address,
+        firstName: first_name,
+        lastName: last_name,
+        profileImage: profile_image_url,
+      },
+    });
+
+    console.log('User: ', user);
+
+    return void res.status(200).json({
+      success: true,
+      message: 'Webhook received',
+    });
+  }
 });
 
 httpServer.listen(port, () => {
