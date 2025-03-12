@@ -5,6 +5,7 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { requireAuth, verifyToken } from '@clerk/express';
+import { prisma } from './prisma';
 
 const app = express();
 const httpServer = createServer(app);
@@ -48,6 +49,11 @@ io.on('connection', (socket: Socket) => {
   socket.on('error', (err: Error) => {
     console.error('Socket error:', err.message);
   });
+});
+
+process.on('SIGINT', async () => {
+  await prisma.$disconnect();
+  process.exit(0);
 });
 
 app.get('/', (req, res) => {
