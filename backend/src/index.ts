@@ -113,16 +113,24 @@ app.post('/api/webhooks', async (req, res) => {
       profile_image_url
     );
 
-    const user = await prisma.user.create({
-      data: {
+    const existingUser = await prisma.user.findUnique({
+      where: {
         email: email_addresses[0].email_address,
-        firstName: first_name,
-        lastName: last_name,
-        profileImage: profile_image_url,
       },
     });
 
-    console.log('User: ', user);
+    if (!existingUser) {
+      const user = await prisma.user.create({
+        data: {
+          email: email_addresses[0].email_address,
+          firstName: first_name,
+          lastName: last_name,
+          profileImage: profile_image_url,
+        },
+      });
+
+      console.log('User: ', user);
+    }
 
     return void res.status(200).json({
       success: true,
