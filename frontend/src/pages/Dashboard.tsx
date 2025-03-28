@@ -2,6 +2,9 @@ import { useAuth, UserButton } from '@clerk/clerk-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Socket, io } from 'socket.io-client';
+import { Container } from '../components/Container';
+import { Card } from '../components/ui/card';
+import { DashboardNav } from '../components/DashboardNav';
 
 export const Dashboard = () => {
   const { getToken } = useAuth();
@@ -37,8 +40,10 @@ export const Dashboard = () => {
   }, [getToken]);
 
   return (
-    <div className='w-screen h-screen flex justify-center items-center'>
-      <UserButton />
-    </div>
+    <Container>
+      <Card className='w-[600px] h-[700px] shadow-xl'>
+        <DashboardNav />
+      </Card>
+    </Container>
   );
 };
