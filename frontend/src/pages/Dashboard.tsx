@@ -1,10 +1,11 @@
-import { useAuth, UserButton } from '@clerk/clerk-react';
+import { useAuth } from '@clerk/clerk-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Socket, io } from 'socket.io-client';
 import { Container } from '../components/Container';
 import { Card } from '../components/ui/card';
 import { DashboardNav } from '../components/DashboardNav';
+import { FirstComer } from '../components/FirstComer';
 
 export const Dashboard = () => {
   const { getToken } = useAuth();
@@ -42,7 +43,8 @@ export const Dashboard = () => {
   return (
     <Container>
       <Card className='w-[600px] h-[700px] shadow-xl'>
-        <DashboardNav />
+        <DashboardNav isActive={false} roomId='Byugvyg345' />
+        <FirstComer />
       </Card>
     </Container>
   );
