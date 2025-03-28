@@ -1,9 +1,9 @@
-import { SignUp } from '@clerk/clerk-react';
-import { useSignUp } from '@clerk/clerk-react';
+import { SignIn } from '@clerk/clerk-react';
+import { useSignIn } from '@clerk/clerk-react';
 import { Container } from '../components/Container';
 
-export const SignUpPage = () => {
-  const { isLoaded } = useSignUp();
+export const SignInPage = () => {
+  const { isLoaded } = useSignIn();
 
   if (!isLoaded) {
     <Container>
@@ -13,7 +13,7 @@ export const SignUpPage = () => {
 
   return (
     <Container>
-      <SignUp forceRedirectUrl='/dashboard' />
+      <SignIn forceRedirectUrl='/dashboard' />
     </Container>
   );
 };
