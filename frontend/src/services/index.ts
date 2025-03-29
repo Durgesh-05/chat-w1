@@ -32,3 +32,23 @@ export const getRooms = async (getToken: () => Promise<string | null>) => {
   );
   return data.rooms ?? null;
 };
+
+export const createRoom = async (getToken: () => Promise<string | null>) => {
+  try {
+    const token = await getToken();
+    const res = await axios.post(
+      `${import.meta.env.VITE_API_URL}/api/rooms`,
+      {},
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return res.data.room;
+  } catch (error) {
+    console.error('Error creating room:', error);
+    return null;
+  }
+};

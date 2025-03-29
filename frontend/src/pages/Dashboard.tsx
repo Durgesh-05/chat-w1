@@ -6,12 +6,16 @@ import { Container } from '../components/Container';
 import { Card } from '../components/ui/card';
 import { DashboardNav } from '../components/DashboardNav';
 import { FirstComer } from '../components/FirstComer';
-import { getRooms } from '../services';
+import { createRoom, getRooms } from '../services';
 
 export const Dashboard = () => {
   const { getToken } = useAuth();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [rooms, setRooms] = useState<any[]>([]);
+  const [roomCreated, setRoomCreated] = useState<boolean>(false);
+  const [roomId, setRoomId] = useState<string | null>('');
+
+  console.log(roomCreated);
 
   useEffect(() => {
     const connectSocket = async () => {
@@ -26,6 +30,12 @@ export const Dashboard = () => {
           'Successfully Connected to SocketIO ' + socketConnection.id,
           { duration: 3000 }
         );
+      });
+
+      socketConnection.on('joinedRoom', ({ roomId }) => {
+        toast.success('Successfully joined the room ' + roomId, {
+          duration: 3000,
+        });
       });
 
       socketConnection.on('disconnect', (reason) => {
@@ -51,11 +61,22 @@ export const Dashboard = () => {
     fetchRooms();
   }, []);
 
+  const handleCreateRoom = async () => {
+    if (!socket) return;
+    const room = await createRoom(getToken);
+    if (!room) return;
+    setRoomCreated(true);
+    setRoomId(room.id);
+    socket.emit('joinRoom', { roomId: room.id });
+  };
+
   return (
     <Container>
       <Card className='w-[600px] h-[700px] shadow-xl'>
-        <DashboardNav isActive={false} roomId='Byugvyg345' />
-        {rooms.length === 0 && <FirstComer />}
+        <DashboardNav isActive={roomCreated} roomId={roomId ?? ''} />
+        {rooms.length === 0 && !roomCreated && (
+          <FirstComer handleCreateRoom={handleCreateRoom} />
+        )}
       </Card>
     </Container>
   );
