@@ -4,9 +4,10 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
-import { requireAuth, verifyToken } from '@clerk/express';
+import { verifyToken } from '@clerk/express';
 import prisma from './prisma';
 import { Webhook } from 'svix';
+import roomsRouter from './routes/rooms.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -138,6 +139,8 @@ app.post('/api/webhooks', async (req, res) => {
     });
   }
 });
+
+app.use('/api/rooms', roomsRouter);
 
 httpServer.listen(port, () => {
   console.log(`Server is running on port http://localhost:${port}`);

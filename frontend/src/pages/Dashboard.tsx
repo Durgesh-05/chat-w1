@@ -6,10 +6,12 @@ import { Container } from '../components/Container';
 import { Card } from '../components/ui/card';
 import { DashboardNav } from '../components/DashboardNav';
 import { FirstComer } from '../components/FirstComer';
+import { getRooms } from '../services';
 
 export const Dashboard = () => {
   const { getToken } = useAuth();
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [rooms, setRooms] = useState<any[]>([]);
 
   useEffect(() => {
     const connectSocket = async () => {
@@ -40,11 +42,20 @@ export const Dashboard = () => {
     };
   }, [getToken]);
 
+  useEffect(() => {
+    async function fetchRooms() {
+      const rooms = await getRooms(getToken);
+      setRooms(rooms);
+    }
+
+    fetchRooms();
+  }, []);
+
   return (
     <Container>
       <Card className='w-[600px] h-[700px] shadow-xl'>
         <DashboardNav isActive={false} roomId='Byugvyg345' />
-        <FirstComer />
+        {rooms.length === 0 && <FirstComer />}
       </Card>
     </Container>
   );
