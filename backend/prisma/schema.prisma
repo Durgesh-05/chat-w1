@@ -14,13 +14,13 @@ model User {
   email        String    @unique
   profileImage String?
   createdAt    DateTime  @default(now())
-  rooms        Room[]
+  rooms        Room[]    @relation("UserRooms")
   messages     Message[]
 }
 
 model Room {
   id        String    @id @default(uuid())
-  users     User[]
+  users     User[]    @relation("UserRooms")
   messages  Message[]
   createdAt DateTime  @default(now())
 }

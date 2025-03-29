@@ -49,6 +49,12 @@ io.on('connection', (socket: Socket) => {
     );
   });
 
+  socket.on('joinRoom', ({ roomId }: { roomId: string }) => {
+    socket.join(roomId);
+    console.log(`User ${socket.id} joined room ${roomId}`);
+    socket.emit('joinedRoom', { roomId });
+  });
+
   socket.on('error', (err: Error) => {
     console.error('Socket error:', err.message);
   });
@@ -145,3 +151,5 @@ app.use('/api/rooms', roomsRouter);
 httpServer.listen(port, () => {
   console.log(`Server is running on port http://localhost:${port}`);
 });
+
+export { io };
