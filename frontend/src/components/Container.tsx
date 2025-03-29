@@ -1,8 +1,15 @@
 import { ReactNode } from 'react';
 
-export const Container = ({ children }: { children: ReactNode }) => {
+interface ContainerProps {
+  children: ReactNode;
+  className?: string;
+}
+
+export const Container = ({ children, className }: ContainerProps) => {
   return (
-    <div className='w-screen h-screen flex justify-center items-center'>
+    <div
+      className={`w-screen h-screen flex justify-center items-center ${className}`}
+    >
       {children}
     </div>
   );
