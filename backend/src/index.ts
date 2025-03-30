@@ -52,7 +52,11 @@ io.on('connection', (socket: Socket) => {
   socket.on('joinRoom', ({ roomId }: { roomId: string }) => {
     socket.join(roomId);
     console.log(`User ${socket.id} joined room ${roomId}`);
-    socket.emit('joinedRoom', { roomId });
+    socket.emit('userJoined', { roomId });
+  });
+
+  socket.on('sendMessage', (data) => {
+    io.to(data.roomId).emit('message', { id: Date.now().toString(), text: data.text, sender: socket.id });
   });
 
   socket.on('error', (err: Error) => {

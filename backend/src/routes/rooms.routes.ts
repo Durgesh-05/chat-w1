@@ -47,11 +47,12 @@ router
           messages: true,
         },
       });
-
+      const filteredRooms = rooms.filter((room) => room.users.length >= 2);
+      
       res.status(200).json({
         success: true,
         status: 200,
-        message: rooms.length ? 'Rooms found successfully' : 'No rooms found',
+        message: filteredRooms.length > 0 ? 'Rooms found successfully' : 'No rooms found',
         rooms,
       });
       return;
@@ -108,6 +109,62 @@ router
       return;
     } catch (error) {
       console.error('Error Creating rooms:', error);
+      res.status(500).json({
+        success: false,
+        status: 500,
+        message: 'Internal server error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  });
+
+  router.post('/join', async (req: Request, res: Response) => {
+    try {
+      const { sessionClaims } = getAuth(req);
+      if (!sessionClaims?.email) {
+        res.status(401).json({ success: false, status: 401, message: 'Unauthorized' });
+        return;
+      }
+  
+      const user = await prisma.user.findUnique({
+        where: { email: sessionClaims.email as string },
+      });
+  
+      if (!user) {
+        res.status(404).json({ success: false, status: 404, message: 'User not found' });
+        return;
+      }
+  
+      const { roomId } = req.body;
+      if (!roomId) {
+        res.status(400).json({ success: false, status: 400, message: 'Room ID is required' });
+        return;
+      }
+  
+      const room = await prisma.room.findUnique({
+        where: { id: roomId },
+        include: { users: true },
+      });
+  
+      if (!room) {
+        res.status(404).json({ success: false, status: 404, message: 'Room not found' });
+        return;
+      }
+  
+      const isAlreadyInRoom = room.users.some((u) => u.id === user.id);
+      if (isAlreadyInRoom) {
+        res.status(200).json({ success: true, status: 200, message: 'Already in the room', room });
+        return;
+      }
+  
+      await prisma.room.update({
+        where: { id: roomId },
+        data: { users: { connect: { id: user.id } } },
+      });
+  
+      res.status(200).json({ success: true, status: 200, message: 'Joined room successfully', room });
+    } catch (error) {
+      console.error('Error joining room:', error);
       res.status(500).json({
         success: false,
         status: 500,
