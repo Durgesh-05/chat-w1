@@ -5,21 +5,31 @@ import { Button } from './ui/button';
 import toast from 'react-hot-toast';
 import { useSocket } from '../hooks/useSocket';
 import { useAuth } from '@clerk/clerk-react';
+import { joinRoom } from '../services';
 
 export const JoinRoom = () => {
   const [roomId, setRoomId] = useState('');
   const navigate = useNavigate();
-  const {getToken} = useAuth()
-  const socket = useSocket(getToken)
+  const { getToken } = useAuth();
+  const socket = useSocket(getToken);
 
-  const handleJoinRoom = () => {
+  const handleJoinRoom = async () => {
     if (!roomId.trim()) {
       toast.error('Please enter a valid Room ID');
       return;
     }
 
-    socket?.emit("joinRoom", {roomId})
-    navigate(`/chat/${roomId}`);
+    try {
+      const data = await joinRoom(roomId, getToken);
+      if (!data) throw new Error('Failed to join room');
+      socket?.emit('joinRoom', { roomId });
+      toast.success('Joined room successfully!');
+      navigate(`/chat/${roomId}`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Error joining room'
+      );
+    }
   };
 
   return (

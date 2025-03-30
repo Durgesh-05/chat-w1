@@ -52,3 +52,32 @@ export const createRoom = async (getToken: () => Promise<string | null>) => {
     return null;
   }
 };
+
+export const joinRoom = async (
+  roomId: string,
+  getToken: () => Promise<string | null>
+) => {
+  try {
+    const token = await getToken();
+    if (!token) {
+      console.error('Token is null or undefined');
+      return null;
+    }
+
+    const res = await axios.post(
+      `${import.meta.env.VITE_API_URL}/api/rooms/join`,
+      { roomId },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return res.data ?? null;
+  } catch (error) {
+    console.error('Error joining room:', error);
+    return null;
+  }
+};
