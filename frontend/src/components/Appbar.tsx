@@ -7,7 +7,7 @@ interface RoomActiveStatus {
   roomId?: string;
 }
 
-export const DashboardNav = ({ isActive, roomId }: RoomActiveStatus) => {
+export const AppBar = ({ isActive, roomId }: RoomActiveStatus) => {
   const copyRoomId = () => {
     if (!roomId) return;
     navigator.clipboard.writeText(roomId);
@@ -20,7 +20,7 @@ export const DashboardNav = ({ isActive, roomId }: RoomActiveStatus) => {
 
   return (
     <div className='w-full bg-[#1e1f20] flex p-6 rounded justify-between items-center'>
-      <div className='text-gray-100 font-semibold text-xl'>Chat-W1</div>
+      <div className='text-gray-100 font-semibold text-xl'>Encrypto</div>
       {isActive && roomId && (
         <div className='flex items-center justify-center gap-2 text-gray-200 text-lg font-semibold bg-[#2c2c2c] px-4 py-1 rounded-lg'>
           <span className='text-lg'>{formattedRoomId}</span>

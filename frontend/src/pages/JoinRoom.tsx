@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Input } from './ui/input';
-import { Button } from './ui/button';
+import { Input } from '../components/ui/input';
+import { Button } from '../components/ui/button';
 import toast from 'react-hot-toast';
 import { useSocket } from '../hooks/useSocket';
 import { useAuth } from '@clerk/clerk-react';
 import { joinRoom } from '../services';
+import { Card } from '../components/ui/card';
+import { Container } from '../components/Container';
+import { AppBar } from '../components/Appbar';
 
 export const JoinRoom = () => {
   const [roomId, setRoomId] = useState('');
@@ -33,17 +36,24 @@ export const JoinRoom = () => {
   };
 
   return (
-    <div className='flex flex-col items-center gap-4'>
-      <Input
-        type='text'
-        placeholder='Enter Room ID'
-        value={roomId}
-        onChange={(e) => setRoomId(e.target.value)}
-        className='w-[250px] p-3 text-lg border border-gray-300 rounded-md'
-      />
-      <Button onClick={handleJoinRoom} className='text-lg px-6 py-3'>
-        Join Room
-      </Button>
-    </div>
+    <Container>
+      <Card className='w-[600px] h-[700px] shadow-xl relative'>
+        <AppBar isActive={false} roomId={''} />
+        <div className='flex flex-col items-center gap-4 justify-center h-full'>
+          <Input
+            type='text'
+            placeholder='Enter Room ID'
+            value={roomId}
+            onChange={(e) => setRoomId(e.target.value)}
+            className='w-[250px] p-3 text-lg border border-gray-300 rounded-md'
+          />
+          <div>
+            <Button onClick={handleJoinRoom} className='text-lg px-6 py-3'>
+              Join Room
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </Container>
   );
 };

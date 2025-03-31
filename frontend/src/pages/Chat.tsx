@@ -5,7 +5,7 @@ import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { useAuth } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
-import { DashboardNav } from '../components/DashboardNav';
+import { AppBar } from '../components/Appbar';
 import { Card } from '../components/ui/card';
 import { Container } from '../components/Container';
 
@@ -70,7 +70,7 @@ export const Chat = () => {
     <Container>
       <Card className='w-[600px] h-[700px] shadow-xl flex flex-col bg-white'>
         {/* Dashboard Navbar with Room ID */}
-        <DashboardNav isActive={true} roomId={roomId ?? ''} />
+        <AppBar isActive={true} roomId={roomId ?? ''} />
 
         {/* Chat Messages */}
         <div className='flex-1 overflow-y-auto space-y-2 p-4'>
