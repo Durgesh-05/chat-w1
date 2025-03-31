@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 
 export const useSocket = (getToken: () => Promise<string | null>) => {
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [activeUsers, setActiveUsers] = useState<string[]>([]);
 
   useEffect(() => {
     const connectSocket = async () => {
@@ -23,6 +24,11 @@ export const useSocket = (getToken: () => Promise<string | null>) => {
         toast.error('SocketIO disconnected: ' + reason);
       });
 
+      socketConnection.on('activeUsers', ({ users }) => {
+        console.log('Active Users ', users);
+        setActiveUsers(users);
+      });
+
       setSocket(socketConnection);
     };
 
@@ -33,5 +39,5 @@ export const useSocket = (getToken: () => Promise<string | null>) => {
     };
   }, [getToken]);
 
-  return socket;
+  return { socket, activeUsers };
 };

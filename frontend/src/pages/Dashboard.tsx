@@ -18,7 +18,7 @@ export const Dashboard = () => {
   const navigate = useNavigate();
   const { getToken } = useAuth();
   const { user } = useUser();
-  const socket = useSocket(getToken);
+  const { socket } = useSocket(getToken);
   const { rooms, loading, filteredRooms } = useFetchRooms(getToken);
 
   const handleCreateRoom = async () => {

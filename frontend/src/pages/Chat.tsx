@@ -19,7 +19,7 @@ interface Message {
 export const Chat = () => {
   const { roomId } = useParams();
   const { getToken } = useAuth();
-  const socket = useSocket(getToken);
+  const { socket } = useSocket(getToken);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
 

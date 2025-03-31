@@ -4,7 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
-import { verifyToken } from '@clerk/express';
+import { verifyToken, clerkClient } from '@clerk/express';
 import prisma from './prisma';
 import { Webhook } from 'svix';
 import roomsRouter from './routes/rooms.routes';
@@ -12,6 +12,7 @@ import roomsRouter from './routes/rooms.routes';
 const app = express();
 const httpServer = createServer(app);
 const port = 8000;
+const onlineUsers = new Map<string, string>();
 const io = new Server(httpServer, {
   cors: {
     origin: '*',
@@ -34,6 +35,10 @@ io.use(async (socket: Socket, next) => {
       secretKey: process.env.CLERK_SECRET_KEY,
     });
     socket.data.user = clerkUser;
+    const userMetaData = await clerkClient.users.getUser(
+      clerkUser.userId as string
+    );
+    socket.data.userId = userMetaData.privateMetadata.userId as string;
     next();
   } catch (err) {
     next(new Error('Authentication failed on SocketIO'));
@@ -42,11 +47,15 @@ io.use(async (socket: Socket, next) => {
 
 io.on('connection', (socket: Socket) => {
   console.log('User Connected with ID: ' + socket.id);
+  onlineUsers.set(socket.data.userId, socket.data.user);
+  io.emit('activeUsers', { users: Array.from(onlineUsers.keys()) });
 
   socket.on('disconnect', (reason) => {
+    onlineUsers.delete(socket.data.userId);
     console.log(
       'User Disconnected with ID: ' + socket.id + ' Reason: ' + reason
     );
+    io.emit('activeUsers', { users: Array.from(onlineUsers.keys()) });
   });
 
   socket.on('joinRoom', ({ roomId }: { roomId: string }) => {
@@ -56,7 +65,11 @@ io.on('connection', (socket: Socket) => {
   });
 
   socket.on('sendMessage', (data) => {
-    io.to(data.roomId).emit('message', { id: Date.now().toString(), text: data.text, sender: socket.id });
+    io.to(data.roomId).emit('message', {
+      id: Date.now().toString(),
+      text: data.text,
+      sender: socket.id,
+    });
   });
 
   socket.on('error', (err: Error) => {
@@ -114,7 +127,7 @@ app.post('/api/webhooks', async (req, res) => {
   }
 
   if (evt.type === 'user.created') {
-    const { email_addresses, first_name, last_name, profile_image_url } =
+    const { email_addresses, first_name, last_name, profile_image_url, id } =
       evt.data;
     console.log(
       'Webhook Recieved data: ',
@@ -137,6 +150,12 @@ app.post('/api/webhooks', async (req, res) => {
           firstName: first_name,
           lastName: last_name,
           profileImage: profile_image_url,
+        },
+      });
+
+      await clerkClient.users.updateUserMetadata(id, {
+        privateMetadata: {
+          userId: user.id,
         },
       });
 

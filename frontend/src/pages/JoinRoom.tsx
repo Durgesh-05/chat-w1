@@ -14,7 +14,7 @@ export const JoinRoom = () => {
   const [roomId, setRoomId] = useState('');
   const navigate = useNavigate();
   const { getToken } = useAuth();
-  const socket = useSocket(getToken);
+  const { socket } = useSocket(getToken);
 
   const handleJoinRoom = async () => {
     if (!roomId.trim()) {
