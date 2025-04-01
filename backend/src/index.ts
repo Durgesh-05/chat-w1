@@ -9,10 +9,11 @@ import prisma from './prisma';
 import { Webhook } from 'svix';
 import roomsRouter from './routes/rooms.routes';
 import messageRouter from './routes/message.route';
+import { pub, sub } from './services/redis';
 
 const app = express();
 const httpServer = createServer(app);
-const port = 8000;
+const port = process.env.PORT ? process.env.PORT : 8000;
 const onlineUsers = new Map<string, string>();
 const io = new Server(httpServer, {
   cors: {
@@ -65,23 +66,32 @@ io.on('connection', (socket: Socket) => {
     socket.emit('userJoined', { roomId });
   });
 
-  socket.on("leaveRoom", ({ roomId }: { roomId: string }) => {
-    socket.leave(roomId)
+  socket.on('leaveRoom', ({ roomId }: { roomId: string }) => {
+    socket.leave(roomId);
     console.log(`User ${socket.id} leave room ${roomId}`);
     socket.emit('userLeft', { roomId });
-  })
+  });
 
-  socket.on('sendMessage', (data) => {
-    io.to(data.roomId).emit('message', {
-      id: Date.now().toString(),
-      text: data.text,
-      sender: socket.data.user,
-    });
+  socket.on('sendMessage', async (data) => {
+    await pub.publish('MESSAGES', JSON.stringify(data));
   });
 
   socket.on('error', (err: Error) => {
     console.error('Socket error:', err.message);
   });
+});
+
+sub.on('message', async (channel, message) => {
+  if (channel === 'MESSAGES') {
+    const data = JSON.parse(message);
+    console.log('Data From Redis Pub', data);
+
+    io.to(data.roomId).emit('message', {
+      id: Date.now().toString(),
+      text: data.text,
+      sender: data.sender,
+    });
+  }
 });
 
 process.on('SIGINT', async () => {
@@ -183,5 +193,3 @@ app.use('/api/messages', messageRouter);
 httpServer.listen(port, () => {
   console.log(`Server is running on port http://localhost:${port}`);
 });
-
-export { io };

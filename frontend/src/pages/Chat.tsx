@@ -49,7 +49,7 @@ export const Chat = ({ socket }: { socket: Socket | null }) => {
     socket.on('message', (data) => {
       setMessages((prev) => [
         ...prev,
-        { id: data.id, text: data.text, sender: data.sender.userId },
+        { id: data.id, text: data.text, sender: data.sender },
       ]);
     });
 
