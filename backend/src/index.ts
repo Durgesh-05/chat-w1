@@ -8,6 +8,7 @@ import { verifyToken, clerkClient } from '@clerk/express';
 import prisma from './prisma';
 import { Webhook } from 'svix';
 import roomsRouter from './routes/rooms.routes';
+import messageRouter from './routes/message.route';
 
 const app = express();
 const httpServer = createServer(app);
@@ -64,11 +65,17 @@ io.on('connection', (socket: Socket) => {
     socket.emit('userJoined', { roomId });
   });
 
+  socket.on("leaveRoom", ({ roomId }: { roomId: string }) => {
+    socket.leave(roomId)
+    console.log(`User ${socket.id} leave room ${roomId}`);
+    socket.emit('userLeft', { roomId });
+  })
+
   socket.on('sendMessage', (data) => {
     io.to(data.roomId).emit('message', {
       id: Date.now().toString(),
       text: data.text,
-      sender: socket.id,
+      sender: socket.data.user,
     });
   });
 
@@ -150,6 +157,7 @@ app.post('/api/webhooks', async (req, res) => {
           firstName: first_name,
           lastName: last_name,
           profileImage: profile_image_url,
+          clerkUserId: id,
         },
       });
 
@@ -170,6 +178,7 @@ app.post('/api/webhooks', async (req, res) => {
 });
 
 app.use('/api/rooms', roomsRouter);
+app.use('/api/messages', messageRouter);
 
 httpServer.listen(port, () => {
   console.log(`Server is running on port http://localhost:${port}`);
