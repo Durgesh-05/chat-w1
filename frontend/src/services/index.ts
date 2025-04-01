@@ -81,3 +81,44 @@ export const joinRoom = async (
     return null;
   }
 };
+
+export const getMessages = async (
+  getToken: () => Promise<string | null>,
+  roomId: string
+) => {
+  const data = await getRequest(
+    `${import.meta.env.VITE_API_URL}/api/messages/${roomId}`,
+    getToken
+  );
+  return data.messages ?? null;
+};
+
+export const saveMessage = async (
+  getToken: () => Promise<string | null>,
+  roomId: string,
+  msg: string,
+  senderId: string
+) => {
+  try {
+    const token = await getToken();
+    const res = await axios.post(
+      `${import.meta.env.VITE_API_URL}/api/messages`,
+      {
+        roomId,
+        senderId,
+        text: msg,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return res.status === 200;
+  } catch (error) {
+    console.error('Error sending messages:', error);
+    return false;
+  }
+};

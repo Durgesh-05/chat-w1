@@ -6,25 +6,34 @@ export const RoomCard = ({
   users,
   roomId,
   currentUserId,
+  activeUsers
 }: {
   users: User[];
   roomId: string;
   currentUserId: string | undefined;
+  activeUsers: string[]
 }) => {
   const otherUsers = users.filter((u) => u.id !== currentUserId);
+  // const { getToken } = useAuth();
+  // const { activeUsers } = useSocket(getToken);
 
   return (
     <Card className='flex items-center justify-between p-4 shadow-lg cursor-pointer hover:bg-gray-100 transition'>
       <div className='flex items-center gap-4'>
         {otherUsers.length === 1 ? (
           <>
-            <Avatar className='w-12 h-12'>
-              <AvatarImage
-                src={otherUsers[0].profileImage}
-                alt={otherUsers[0].firstName}
-              />
-              <AvatarFallback>{otherUsers[0].firstName[0]}</AvatarFallback>
-            </Avatar>
+            <div className='relative'>
+              <Avatar className='w-12 h-12'>
+                <AvatarImage
+                  src={otherUsers[0].profileImage}
+                  alt={otherUsers[0].firstName}
+                />
+                <AvatarFallback>{otherUsers[0].firstName[0]}</AvatarFallback>
+              </Avatar>
+              {activeUsers.includes(otherUsers[0].id) && (
+                <div className='absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full'></div>
+              )}
+            </div>
             <div className='flex flex-col justify-center items-start'>
               <div className='text-gray-900 font-semibold'>
                 {otherUsers[0].firstName}
@@ -37,15 +46,19 @@ export const RoomCard = ({
         ) : (
           <div className='flex -space-x-4'>
             {otherUsers.slice(0, 3).map((user, index) => (
-              <Avatar
-                key={user.id}
-                className={`w-10 h-10 border-2 border-white ${
-                  index > 0 ? '-ml-2' : ''
-                }`}
-              >
-                <AvatarImage src={user.profileImage} alt={user.firstName} />
-                <AvatarFallback>{user.firstName[0]}</AvatarFallback>
-              </Avatar>
+              <div key={user.id} className='relative'>
+                <Avatar
+                  className={`w-10 h-10 border-2 border-white ${
+                    index > 0 ? '-ml-2' : ''
+                  }`}
+                >
+                  <AvatarImage src={user.profileImage} alt={user.firstName} />
+                  <AvatarFallback>{user.firstName[0]}</AvatarFallback>
+                </Avatar>
+                {activeUsers.includes(user.id) && (
+                  <div className='absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full'></div>
+                )}
+              </div>
             ))}
             {otherUsers.length > 3 && (
               <div className='w-10 h-10 flex items-center justify-center bg-gray-300 text-gray-700 rounded-full text-sm font-semibold border-2 border-white'>

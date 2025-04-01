@@ -5,20 +5,26 @@ import { Card } from '../components/ui/card';
 import { AppBar } from '../components/Appbar';
 import { Intro } from '../components/Intro';
 import { createRoom } from '../services';
-import { useSocket } from '../hooks/useSocket';
 import { useNavigate } from 'react-router-dom';
 import { RoomCard } from '../components/RoomsCard';
 import { CustomSkeleton } from '../components/CustomSkeleton';
 import { CustomDialog } from '../components/CustomDialog';
 import { useFetchRooms } from '../hooks/useFetchRooms';
+import { Socket } from 'socket.io-client';
 
-export const Dashboard = () => {
+export const Dashboard = ({
+  socket,
+  activeUsers,
+}: {
+  socket: Socket | null;
+  activeUsers: string[];
+}) => {
   const [roomCreated, setRoomCreated] = useState<boolean>(false);
   const [roomId, setRoomId] = useState<string | null>('');
   const navigate = useNavigate();
   const { getToken } = useAuth();
   const { user } = useUser();
-  const { socket } = useSocket(getToken);
+  // const { socket } = useSocket(getToken);
   const { rooms, loading, filteredRooms } = useFetchRooms(getToken);
 
   const handleCreateRoom = async () => {
@@ -54,11 +60,15 @@ export const Dashboard = () => {
                 );
                 return (
                   <div key={room.id}>
-                    <div className='mt-2 mx-4'>
+                    <div
+                      className='mt-2 mx-4'
+                      onClick={() => navigate(`/chat/${room.id}`)}
+                    >
                       <RoomCard
                         users={room.users}
                         roomId={room.id}
                         currentUserId={currentUser?.id}
+                        activeUsers={activeUsers}
                       />
                     </div>
                     <div className='absolute bottom-8 right-8 '>

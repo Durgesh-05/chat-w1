@@ -15,7 +15,7 @@ export const useSocket = (getToken: () => Promise<string | null>) => {
       });
 
       socketConnection.on('connect', () => {
-        toast.success('Connected to SocketIO ' + socketConnection.id, {
+        toast.success('User is online ', {
           duration: 3000,
         });
       });
@@ -25,8 +25,11 @@ export const useSocket = (getToken: () => Promise<string | null>) => {
       });
 
       socketConnection.on('activeUsers', ({ users }) => {
-        console.log('Active Users ', users);
         setActiveUsers(users);
+      });
+
+      socketConnection.on('userLeft', ({ roomId }) => {
+        toast.success('User Left ' + roomId, { duration: 3000 });
       });
 
       setSocket(socketConnection);
@@ -36,6 +39,7 @@ export const useSocket = (getToken: () => Promise<string | null>) => {
 
     return () => {
       socket?.disconnect();
+      socket?.removeAllListeners();
     };
   }, [getToken]);
 
