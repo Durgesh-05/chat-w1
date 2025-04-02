@@ -8,7 +8,7 @@ import { verifyToken, clerkClient } from '@clerk/express';
 import prisma from './prisma';
 import { Webhook } from 'svix';
 import roomsRouter from './routes/rooms.routes';
-import messageRouter from './routes/message.route';
+import messageRouter from './routes/message.routes';
 import { pub, sub } from './services/redis';
 
 const app = express();

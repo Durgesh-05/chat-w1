@@ -122,3 +122,11 @@ export const saveMessage = async (
     return false;
   }
 };
+
+export enum MessageType {
+  TEXT = 'TEXT',
+  IMAGE = 'IMAGE',
+  FILE = 'FILE',
+  VIDEO = 'VIDEO',
+  AUDIO = 'AUDIO',
+}

@@ -13,6 +13,7 @@ model User {
   lastName     String?
   email        String    @unique
   clerkUserId  String
+  lastSeen     DateTime?
   profileImage String?
   createdAt    DateTime  @default(now())
   rooms        Room[]    @relation("UserRooms")
@@ -27,10 +28,20 @@ model Room {
 }
 
 model Message {
-  id       String @id @default(uuid())
-  senderId String
-  roomId   String
-  content  String
-  sender   User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  room     Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  id        String      @id @default(uuid())
+  senderId  String
+  roomId    String
+  content   String
+  type      MessageType @default(TEXT)
+  createdAt DateTime    @default(now())
+  sender    User        @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  room      Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  VIDEO
+  AUDIO
 }
