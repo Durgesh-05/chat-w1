@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { getAuth, requireAuth, clerkClient } from '@clerk/express';
 import prisma from '../prisma';
+import { redis } from '../services/redis';
 
 const router = Router();
 router.use(requireAuth());
@@ -54,6 +55,31 @@ router.get('/:roomId', async (req: Request, res: Response) => {
   try {
     const { roomId } = req.params;
 
+    // caching messages before querying into db
+    const cachedMessages = await redis.lrange(`messages:${roomId}`, 0, 99);
+
+    if (cachedMessages && cachedMessages.length > 0) {
+      const parsedMessages = cachedMessages.map((msg) => JSON.parse(msg));
+
+      const sortedMessages = parsedMessages.sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+
+      console.log(
+        `Retrieved ${sortedMessages.length} messages from cache for room ${roomId}`
+      );
+
+      res.status(200).json({
+        success: true,
+        status: 200,
+        message: 'Messages retrieved from cache',
+        messages: sortedMessages,
+        source: 'cache',
+      });
+      return;
+    }
+
     const messages = await prisma.message.findMany({
       where: {
         roomId: roomId,
@@ -62,7 +88,25 @@ router.get('/:roomId', async (req: Request, res: Response) => {
         sender: true,
         room: true,
       },
+      orderBy: {
+        createdAt: 'asc',
+      },
     });
+
+    if (messages.length > 0) {
+      const pipeline = redis.pipeline();
+
+      pipeline.del(`messages:${roomId}`);
+
+      // Adding messages to cache
+      messages.forEach((msg) => {
+        pipeline.lpush(`messages:${roomId}`, JSON.stringify(msg));
+      });
+
+      // Executing pipeline
+      await pipeline.exec();
+      console.log(`Cached ${messages.length} messages for room ${roomId}`);
+    }
 
     res.status(200).json({
       success: true,

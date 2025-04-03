@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { useAuth, useUser } from '@clerk/clerk-react';
@@ -7,20 +7,22 @@ import toast from 'react-hot-toast';
 import { AppBar } from '../components/Appbar';
 import { Card } from '../components/ui/card';
 import { Container } from '../components/Container';
-import { getMessages, saveMessage } from '../services';
+import { getMessages } from '../services';
 import { Socket } from 'socket.io-client';
 
 interface Message {
   id: string;
-  text: string;
-  sender: string;
+  content: string;
+  senderId: string;
+  createdAt: string;
+  clerkUserId: string;
 }
 
 export const Chat = ({ socket }: { socket: Socket | null }) => {
+  const navigate = useNavigate();
   const { roomId } = useParams();
   const { getToken } = useAuth();
   const { user } = useUser();
-  // const { socket } = useSocket(getToken);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
 
@@ -30,32 +32,42 @@ export const Chat = ({ socket }: { socket: Socket | null }) => {
     const fetchMessage = async () => {
       const messages = await getMessages(getToken, roomId);
       setMessages(
-        messages.map((msg: any) => {
-          return {
-            id: msg.id,
-            text: msg.content,
-            sender: msg.sender.clerkUserId,
-          };
-        })
+        messages.map((msg: Message) => ({
+          id: msg.id,
+          content: msg.content,
+          senderId: msg.senderId,
+          createdAt: msg.createdAt,
+          clerkUserId: msg.clerkUserId,
+        }))
       );
     };
 
     socket.emit('joinRoom', { roomId });
 
-    socket.on('userJoined', ({ roomId }: { roomId: string }) => {
-      toast.success('User Joined ' + roomId, { duration: 3000 });
-    });
+    socket.on(
+      'userJoined',
+      ({ roomId, name }: { roomId: string; name: string }) => {
+        toast.success(`${name} Joined ${roomId}`, { duration: 3000 });
+      }
+    );
 
     socket.on('message', (data) => {
       setMessages((prev) => [
         ...prev,
-        { id: data.id, text: data.text, sender: data.sender },
+        {
+          id: data.id,
+          content: data.content,
+          senderId: data.senderId,
+          createdAt: data.createdAt,
+          clerkUserId: data.clerkUserId,
+        },
       ]);
     });
 
     fetchMessage();
 
     return () => {
+      navigate('/dashboard');
       socket.off('userJoined');
       socket.off('message');
       socket.emit('leaveRoom', { roomId });
@@ -66,22 +78,14 @@ export const Chat = ({ socket }: { socket: Socket | null }) => {
     if (!newMessage.trim() || !socket) return;
 
     const messageData = {
-      text: newMessage,
+      content: newMessage,
       roomId,
-      sender: user?.id as string,
+      createdAt: new Date().toISOString(),
+      clerkUserId: user?.id as string,
     };
-    const isMessageSent = await saveMessage(
-      getToken,
-      roomId as string,
-      newMessage,
-      user?.id as string
-    );
-    if (isMessageSent) {
-      socket.emit('sendMessage', messageData);
-      setNewMessage('');
-    } else {
-      toast.error('Failed to store message ', { duration: 3000 });
-    }
+
+    socket.emit('sendMessage', messageData);
+    setNewMessage('');
   };
 
   return (
@@ -90,14 +94,25 @@ export const Chat = ({ socket }: { socket: Socket | null }) => {
         <AppBar isActive={true} roomId={roomId ?? ''} />
 
         <div className='flex-1 overflow-y-auto space-y-2 p-4'>
-          {messages.map((msg) => (
+          {messages.map((msg: Message) => (
             <div
               key={msg.id}
-              className={`p-2 rounded-md w-fit max-w-[80%] ${
-                msg.sender === user?.id ? 'bg-gray-200 ml-auto' : 'bg-gray-100'
+              className={`relative p-2 rounded-md w-fit max-w-[60%] break-words ${
+                msg.clerkUserId === user?.id
+                  ? 'bg-gray-200 ml-auto'
+                  : 'bg-gray-100'
               }`}
             >
-              {msg.text}
+              <div className='flex '>
+                <span className='pb-2'>{msg.content}</span>
+                <span className='text-xs text-gray-500 self-end pl-2'>
+                  {new Date(msg.createdAt).toLocaleTimeString('en-GB', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hourCycle: 'h23',
+                  })}
+                </span>
+              </div>
             </div>
           ))}
         </div>

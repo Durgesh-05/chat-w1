@@ -9,15 +9,19 @@ import { useNavigate } from 'react-router-dom';
 import { RoomCard } from '../components/RoomsCard';
 import { CustomSkeleton } from '../components/CustomSkeleton';
 import { CustomDialog } from '../components/CustomDialog';
-import { useFetchRooms } from '../hooks/useFetchRooms';
 import { Socket } from 'socket.io-client';
 
 export const Dashboard = ({
   socket,
   activeUsers,
+  rooms, 
+  loading, filteredRooms
 }: {
-  socket: Socket | null;
-  activeUsers: string[];
+  socket: Socket | null,
+  activeUsers: string[],
+  rooms:any[],
+  loading: boolean,
+  filteredRooms: any[]
 }) => {
   const [roomCreated, setRoomCreated] = useState<boolean>(false);
   const [roomId, setRoomId] = useState<string | null>('');
@@ -25,7 +29,7 @@ export const Dashboard = ({
   const { getToken } = useAuth();
   const { user } = useUser();
   // const { socket } = useSocket(getToken);
-  const { rooms, loading, filteredRooms } = useFetchRooms(getToken);
+  // const { rooms, loading, filteredRooms } = useFetchRooms(getToken);
 
   const handleCreateRoom = async () => {
     if (!socket) return;

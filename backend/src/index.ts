@@ -9,12 +9,13 @@ import prisma from './prisma';
 import { Webhook } from 'svix';
 import roomsRouter from './routes/rooms.routes';
 import messageRouter from './routes/message.routes';
-import { pub, sub } from './services/redis';
+import { pub, redis, sub } from './services/redis';
 
 const app = express();
 const httpServer = createServer(app);
 const port = process.env.PORT ? process.env.PORT : 8000;
 const onlineUsers = new Map<string, string>();
+const BATCH_TIME = 10000;
 const io = new Server(httpServer, {
   cors: {
     origin: '*',
@@ -63,17 +64,39 @@ io.on('connection', (socket: Socket) => {
   socket.on('joinRoom', ({ roomId }: { roomId: string }) => {
     socket.join(roomId);
     console.log(`User ${socket.id} joined room ${roomId}`);
-    socket.emit('userJoined', { roomId });
+    socket.to(roomId).emit('userJoined', { roomId, name: socket.data.user.name });
   });
 
-  socket.on('leaveRoom', ({ roomId }: { roomId: string }) => {
+  socket.on('leaveRoom', async ({ roomId }: { roomId: string }) => {
     socket.leave(roomId);
+    await prisma.user.update({
+      where: {
+        id: socket.data.userId,
+      },
+      data: {
+        lastSeen: new Date(),
+      },
+    });
     console.log(`User ${socket.id} leave room ${roomId}`);
     socket.emit('userLeft', { roomId });
   });
 
   socket.on('sendMessage', async (data) => {
-    await pub.publish('MESSAGES', JSON.stringify(data));
+    const message = {
+      content: data.content,
+      roomId: data.roomId,
+      senderId: socket.data.userId,
+      createdAt: data.createdAt,
+      clerkUserId: data.clerkUserId,
+    };
+
+    await pub.publish('MESSAGES', JSON.stringify(message));
+    // In redis list for caching message
+    await redis.lpush(`messages:${data.roomId}`, JSON.stringify(message));
+    await redis.ltrim(`messages:${data.roomId}`, 0, 99);
+
+    // For queue to update batch message to db
+    await redis.rpush('unsaved_messages', JSON.stringify(message));
   });
 
   socket.on('error', (err: Error) => {
@@ -88,16 +111,9 @@ sub.on('message', async (channel, message) => {
 
     io.to(data.roomId).emit('message', {
       id: Date.now().toString(),
-      text: data.text,
-      sender: data.sender,
+      ...data,
     });
   }
-});
-
-process.on('SIGINT', async () => {
-  console.log('Disconnecting prisma db');
-  await prisma.$disconnect();
-  process.exit(0);
 });
 
 app.get('/', (req, res) => {
@@ -189,6 +205,38 @@ app.post('/api/webhooks', async (req, res) => {
 
 app.use('/api/rooms', roomsRouter);
 app.use('/api/messages', messageRouter);
+
+const interval = setInterval(async () => {
+  try {
+    const messages = await redis.lrange('unsaved_messages', 0, -1);
+    if (messages.length === 0) return;
+
+    const parsedMessages = messages
+      .map((message) => JSON.parse(message))
+      .map(({ content, roomId, senderId, createdAt }) => ({
+        content,
+        roomId,
+        senderId,
+        createdAt,
+      }));
+    await prisma.message.createMany({ data: parsedMessages });
+    await redis.del('unsaved_messages');
+    console.log(`Saved ${parsedMessages.length} messages to PostgreSQL`);
+  } catch (error) {
+    console.error('Error in batch saving messages:', error);
+    // Need to implement retry mechanism
+  }
+}, BATCH_TIME);
+
+process.on('SIGINT', async () => {
+  console.log('Disconnecting prisma db');
+  console.log('Disconnecting Redis Caching instance');
+  redis.del('unsaved_messages');
+  redis.del('messages');
+  clearInterval(interval);
+  await prisma.$disconnect();
+  process.exit(0);
+});
 
 httpServer.listen(port, () => {
   console.log(`Server is running on port http://localhost:${port}`);
