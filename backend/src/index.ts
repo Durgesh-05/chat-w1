@@ -64,7 +64,9 @@ io.on('connection', (socket: Socket) => {
   socket.on('joinRoom', ({ roomId }: { roomId: string }) => {
     socket.join(roomId);
     console.log(`User ${socket.id} joined room ${roomId}`);
-    socket.to(roomId).emit('userJoined', { roomId, name: socket.data.user.name });
+    socket
+      .to(roomId)
+      .emit('userJoined', { roomId, name: socket.data.user.name });
   });
 
   socket.on('leaveRoom', async ({ roomId }: { roomId: string }) => {
@@ -79,6 +81,11 @@ io.on('connection', (socket: Socket) => {
     });
     console.log(`User ${socket.id} leave room ${roomId}`);
     socket.emit('userLeft', { roomId });
+  });
+
+  socket.on('typing', ({ roomId }: { roomId: string }) => {
+    console.log(`User is typing in room ${roomId}`);
+    socket.to(roomId).emit('messageTyping');
   });
 
   socket.on('sendMessage', async (data) => {

@@ -9,6 +9,7 @@ import { Card } from '../components/ui/card';
 import { Container } from '../components/Container';
 import { getMessages } from '../services';
 import { Socket } from 'socket.io-client';
+import { TypingIndicator } from '../components/TypingIndicator';
 
 interface Message {
   id: string;
@@ -25,6 +26,10 @@ export const Chat = ({ socket }: { socket: Socket | null }) => {
   const { user } = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [typing, setTyping] = useState(false);
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(
+    null
+  );
 
   useEffect(() => {
     if (!socket || !roomId) return;
@@ -51,6 +56,20 @@ export const Chat = ({ socket }: { socket: Socket | null }) => {
       }
     );
 
+    socket.on('messageTyping', () => {
+      setTyping(true);
+
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+
+      const timeout = setTimeout(() => {
+        setTyping(false);
+      }, 3000);
+
+      setTypingTimeout(timeout);
+    });
+
     socket.on('message', (data) => {
       setMessages((prev) => [
         ...prev,
@@ -62,6 +81,7 @@ export const Chat = ({ socket }: { socket: Socket | null }) => {
           clerkUserId: data.clerkUserId,
         },
       ]);
+      setTyping(false);
     });
 
     fetchMessage();
@@ -70,12 +90,17 @@ export const Chat = ({ socket }: { socket: Socket | null }) => {
       navigate('/dashboard');
       socket.off('userJoined');
       socket.off('message');
+      socket.off('messageTyping');
       socket.emit('leaveRoom', { roomId });
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
     };
   }, [socket, roomId]);
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !socket) return;
+    setTyping(false);
 
     const messageData = {
       content: newMessage,
@@ -86,6 +111,16 @@ export const Chat = ({ socket }: { socket: Socket | null }) => {
 
     socket.emit('sendMessage', messageData);
     setNewMessage('');
+  };
+
+  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMessage(e.target.value);
+
+    if (!socket) return;
+
+    socket.emit('typing', {
+      roomId,
+    });
   };
 
   return (
@@ -115,6 +150,12 @@ export const Chat = ({ socket }: { socket: Socket | null }) => {
               </div>
             </div>
           ))}
+
+          {typing && (
+            <div className='relative p-2 rounded-md w-fit max-w-[60%] break-words bg-gray-100'>
+              <TypingIndicator />
+            </div>
+          )}
         </div>
 
         <div className='flex items-center gap-2 p-2 bg-gray-100 rounded-md'>
@@ -122,7 +163,7 @@ export const Chat = ({ socket }: { socket: Socket | null }) => {
             type='text'
             placeholder='Type a message...'
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={handleTyping}
             className='flex-1 p-2 text-black bg-white border border-gray-300 rounded-md'
           />
           <Button
