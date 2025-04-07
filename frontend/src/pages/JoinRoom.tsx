@@ -37,7 +37,7 @@ export const JoinRoom = () => {
 
   return (
     <Container>
-      <Card className='w-[600px] h-[700px] shadow-xl relative'>
+      <Card className='w-full h-full shadow-xl relative md:w-[50%] md:mx-auto md:h-[80vh]'>
         <AppBar isActive={false} roomId={''} />
         <div className='flex flex-col items-center gap-4 justify-center h-full'>
           <Input

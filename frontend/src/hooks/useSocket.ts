@@ -29,7 +29,7 @@ export const useSocket = (getToken: () => Promise<string | null>) => {
       });
 
       socketConnection.on('userLeft', ({ roomId }) => {
-        toast.success('User Left ' + roomId, { duration: 3000 });
+        toast.success('User Left', { duration: 3000 });
       });
 
       setSocket(socketConnection);

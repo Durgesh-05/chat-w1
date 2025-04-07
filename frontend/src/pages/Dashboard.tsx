@@ -14,14 +14,15 @@ import { Socket } from 'socket.io-client';
 export const Dashboard = ({
   socket,
   activeUsers,
-  rooms, 
-  loading, filteredRooms
+  rooms,
+  loading,
+  filteredRooms,
 }: {
-  socket: Socket | null,
-  activeUsers: string[],
-  rooms:any[],
-  loading: boolean,
-  filteredRooms: any[]
+  socket: Socket | null;
+  activeUsers: string[];
+  rooms: any[];
+  loading: boolean;
+  filteredRooms: any[];
 }) => {
   const [roomCreated, setRoomCreated] = useState<boolean>(false);
   const [roomId, setRoomId] = useState<string | null>('');
@@ -43,7 +44,7 @@ export const Dashboard = ({
 
   return (
     <Container>
-      <Card className='w-[600px] h-[700px] shadow-xl relative'>
+      <Card className='w-full h-full shadow-xl relative md:w-[50%] md:mx-auto md:h-[80vh]'>
         <AppBar isActive={roomCreated} roomId={roomId ?? ''} />
         {rooms.length === 0 && !roomCreated ? (
           loading ? (
@@ -65,7 +66,7 @@ export const Dashboard = ({
                 return (
                   <div key={room.id}>
                     <div
-                      className='mt-2 mx-4'
+                      className='m-2 cursor-pointer'
                       onClick={() => navigate(`/chat/${room.id}`)}
                     >
                       <RoomCard

@@ -22,7 +22,7 @@ export const CustomDialog = ({ handleCreateRoom }: IDialogProps) => {
       <DialogTrigger asChild>
         <CirclePlus className='bg-gray-950 text-white rounded-full' size={34} />
       </DialogTrigger>
-      <DialogContent className='sm:max-w-[425px]'>
+      <DialogContent className='w-[350px] sm:w-full'>
         <DialogHeader>
           <DialogTitle>Create/Join Rooms </DialogTitle>
           <DialogDescription>

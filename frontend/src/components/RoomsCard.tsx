@@ -35,13 +35,15 @@ export const RoomCard = ({
         </div>
 
         <div className='flex flex-col flex-1'>
-          <div className='text-gray-900 font-semibold'>
+          <div className='text-gray-900 font-bold text-lg'>
             {selectedUser.firstName}
           </div>
-          <div className='text-gray-500 font-semibold text-sm'>#{roomId}</div>
+          <div className='text-gray-500 font-bold text-sm'>
+            #{roomId.slice(0, 7)}....{roomId.slice(-7)}
+          </div>
         </div>
 
-        <div className='absolute right-4 bottom-2 text-gray-500 text-sm font-medium'>
+        <div className='absolute right-4 bottom-2 text-gray-500 text-sm font-normal'>
           {new Date(selectedUser.lastSeen).toLocaleTimeString('en-GB', {
             hour: '2-digit',
             minute: '2-digit',

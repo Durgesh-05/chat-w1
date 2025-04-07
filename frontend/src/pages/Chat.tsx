@@ -49,12 +49,9 @@ export const Chat = ({ socket }: { socket: Socket | null }) => {
 
     socket.emit('joinRoom', { roomId });
 
-    socket.on(
-      'userJoined',
-      ({ roomId, name }: { roomId: string; name: string }) => {
-        toast.success(`${name} Joined ${roomId}`, { duration: 3000 });
-      }
-    );
+    socket.on('userJoined', ({ name }: { roomId: string; name: string }) => {
+      toast.success(`${name} Joined`, { duration: 3000 });
+    });
 
     socket.on('messageTyping', () => {
       setTyping(true);
@@ -125,7 +122,7 @@ export const Chat = ({ socket }: { socket: Socket | null }) => {
 
   return (
     <Container>
-      <Card className='w-[600px] h-[700px] shadow-xl flex flex-col bg-white'>
+      <Card className='w-full h-full shadow-xl flex flex-col bg-white md:w-[50%] md:mx-auto md:h-[80vh]'>
         <AppBar isActive={true} roomId={roomId ?? ''} />
 
         <div className='flex-1 overflow-y-auto space-y-2 p-4'>
