@@ -28,7 +28,7 @@ export const useSocket = (getToken: () => Promise<string | null>) => {
         setActiveUsers(users);
       });
 
-      socketConnection.on('userLeft', ({ roomId }) => {
+      socketConnection.on('userLeft', ({}) => {
         toast.success('User Left', { duration: 3000 });
       });
 
