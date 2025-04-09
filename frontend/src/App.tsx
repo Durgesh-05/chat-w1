@@ -7,6 +7,7 @@ import { JoinRoom } from './pages/JoinRoom';
 import { useAuth } from '@clerk/clerk-react';
 import { useSocket } from './hooks/useSocket';
 import { useFetchRooms } from './hooks/useFetchRooms';
+import { ProtectedRoute } from './pages/Protected';
 
 export default function App() {
   const { getToken } = useAuth();
@@ -18,18 +19,34 @@ export default function App() {
       <Route
         path='/dashboard'
         element={
-          <Dashboard
-            rooms={rooms}
-            filteredRooms={filteredRooms}
-            loading={loading}
-            socket={socket}
-            activeUsers={activeUsers}
-          />
+          <ProtectedRoute>
+            <Dashboard
+              rooms={rooms}
+              filteredRooms={filteredRooms}
+              loading={loading}
+              socket={socket}
+              activeUsers={activeUsers}
+            />
+          </ProtectedRoute>
         }
       />
       <Route path='/signin' element={<SignInPage />} />
-      <Route path='/join' element={<JoinRoom />} />
-      <Route path='/chat/:roomId' element={<Chat socket={socket} />} />
+      <Route
+        path='/join'
+        element={
+          <ProtectedRoute>
+            <JoinRoom />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/chat/:roomId'
+        element={
+          <ProtectedRoute>
+            <Chat socket={socket} />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }
